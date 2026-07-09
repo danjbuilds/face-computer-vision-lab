@@ -25,8 +25,7 @@ while True:
     cv2.imshow("Contours", frame)
 
     print(len(contours))
-    first = contours[0]
-    print(first)
+
 
     if cv2.waitKey(1) == ord('q'):
         break
