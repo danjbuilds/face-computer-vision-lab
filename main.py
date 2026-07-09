@@ -30,3 +30,27 @@ print(frame[100,100])
 print(frame[200,200])
 
 camera.release()
+
+
+# gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+# crop = frame[100:300, 200:400]
+
+# small = cv2.resize(frame, (320, 240))
+
+# blur = cv2.GaussianBlur(frame, (5,5), 0)
+
+# Notice that each step produces another image that you can feed into the next step.
+
+# Where we are now
+
+# You now understand how to:
+
+# ✅ Open a camera
+# ✅ Capture frames
+# ✅ Display frames
+# ✅ Understand a frame as a NumPy array
+# ✅ Convert to grayscale
+# ✅ Crop a region of interest (ROI)
+# ✅ Resize an image
+# ✅ Blur an image
