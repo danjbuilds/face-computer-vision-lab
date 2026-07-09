@@ -23,20 +23,6 @@ while True:
 
     retval, faces = detector.detect(frame)
 
-    # print(retval)
-    # print(faces)
-
-    # if faces is not None:
-
-    #     face = faces[0]
-
-    #     x, y, w, h = face[:4]
-
-    #     print(f"x = {x:.1f}")
-    #     print(f"y = {y:.1f}")
-    #     print(f"width = {w:.1f}")
-    #     print(f"height = {h:.1f}")
-
     if faces is not None:
         for face in faces:
             x, y, w, h = face[:4].astype(int)
@@ -47,11 +33,17 @@ while True:
             right_mouth = tuple(face[10:12].astype(int))
             left_mouth = tuple(face[12:14].astype(int))
 
-            cv2.circle(frame, right_eye, 3, (255, 0, 0), -1)
-            cv2.circle(frame, left_eye, 3, (255, 0, 0), -1)
-            cv2.circle(frame, nose, 3, (0, 255, 0), -1)
-            cv2.circle(frame, right_mouth, 3, (0, 0, 255), -1)
-            cv2.circle(frame, left_mouth, 3, (0, 0, 255), -1)
+            landmarks = [
+                right_eye,
+                left_eye,
+                nose,
+                right_mouth,
+                left_mouth
+            ]
+
+            for point in landmarks:
+                cv2.circle(frame, point, 3, (0, 255, 255), -1)
+
 
             cv2.rectangle(
                 frame,
@@ -83,24 +75,3 @@ while True:
 
 camera.release()
 cv2.destroyAllWindows()
-
-# Camera
-# YuNet
-# Bounding box
-# Landmarks
-# Confidence
-
-# ✅ Read frames from a camera.
-# ✅ Basic image processing.
-# ✅ Use a modern face detector.
-# ✅ Understand that detections are NumPy arrays.
-# ✅ Extract the bounding box.
-# ✅ Extract facial landmarks.
-# ✅ Use those landmarks for drawing.
-
-# Each detected face contains:
-
-# Index	    Meaning
-# 0–3	    Bounding box (x, y, w, h)
-# 4–13	    Five facial landmarks
-# 14	    Detection confidence
