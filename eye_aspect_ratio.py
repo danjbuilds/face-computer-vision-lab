@@ -34,7 +34,9 @@ def to_pixel(landmark, width, height):
 blink_count = 0
 
 eye_closed = False
-closed_frames = 0
+closed_start_time = None
+closed_duration = 0
+
 eye_status = "Eyes Open"
 
 while True:
@@ -104,47 +106,37 @@ while True:
         ear = (vertical1 + vertical2) / (2 * horizontal)
         # print(ear)
 
-        # Display EAR
-        cv2.putText(
-            frame,
-            f"EAR: {ear:.3f}",
-            (20, 40),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 255, 0),
-            2
-        )
-
         THRESHOLD = 0.18
 
         if ear < THRESHOLD:
 
-            eye_closed = True
-            closed_frames += 1
+            if not eye_closed:
+                eye_closed = True
+                closed_start_time = time.time()
+
+            closed_duration = time.time() - closed_start_time
+
             eye_status = "Eyes Closed"
 
         else:
 
             if eye_closed:
 
-                if closed_frames <= 8:
+                closed_duration = time.time() - closed_start_time
+
+                if closed_duration <= 0.30:
                     blink_count += 1
-                    eye_status = "Blink"
 
-                else:
-                    eye_status = "Long Closed"
+                eye_closed = False
+                closed_start_time = None
+                closed_duration = 0
 
-            else:
-                eye_status = "Eyes Open"
+            eye_status = "Eyes Open"
 
-            eye_closed = False
-            closed_frames = 0
-
+        cv2.putText(frame, f"EAR: {ear:.3f}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
         cv2.putText(frame, f"Blinks: {blink_count}", (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-        cv2.putText(frame, f"Closed Frames: {closed_frames}", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
-        cv2.putText(frame, eye_status, (20, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
-
+        cv2.putText(frame, f"Closed: {closed_duration:.2f}s", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+        cv2.putText(frame, f"State: {eye_status}", (20, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 255), 2)
 
 
 
