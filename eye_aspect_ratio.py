@@ -31,10 +31,11 @@ def to_pixel(landmark, width, height):
     y = int(landmark.y * height)
     return (x, y)
 
-eyes_closed_start_time = None  # Stores the timestamp when eyes first close
-blink_printed = False          # Prevents the terminal from flooding with "Blink" text
-closed_printed = False         # Prevents the terminal from flooding with "Eyes Close" text
+blink_count = 0
 
+eye_closed = False
+closed_frames = 0
+eye_status = "Eyes Open"
 
 while True:
 
@@ -101,6 +102,7 @@ while True:
 
         # Eye Aspect Ratio
         ear = (vertical1 + vertical2) / (2 * horizontal)
+        # print(ear)
 
         # Display EAR
         cv2.putText(
@@ -113,39 +115,37 @@ while True:
             2
         )
 
+        THRESHOLD = 0.18
 
-        # --- EYE STATE CALCULATOR ---
-    if ear < 0.100:
-        # If this is the FIRST frame your eyes closed, lock in the start time!
-        if eyes_closed_start_time is None:
-            eyes_closed_start_time = time.time() * 1000  # Current time in ms
-        
-        # Calculate exactly how many milliseconds your eyes HAVE BEEN closed
-        current_time_ms = time.time() * 1000
-        duration_closed = current_time_ms - eyes_closed_start_time
+        if ear < THRESHOLD:
 
-        # CASE A: Eyes closed between 100ms and 400ms (A quick blink)
-        if 50 <= duration_closed <= 400:
-            if not blink_printed:
-                print("Blink detected")
-                blink_printed = True  # Locks it so it only prints ONCE per blink
+            eye_closed = True
+            closed_frames += 1
+            eye_status = "Eyes Closed"
 
-        # CASE B: Eyes closed for more than 500ms (Sleeping/Extended Close)
-        elif duration_closed > 500:
-            if not closed_printed:
-                print("Eyes close")
-                closed_printed = True # Locks it so it only prints ONCE per closure
+        else:
 
-    else:
-        # --- EYES ARE OPEN ---
-        # If your eyes were previously closed, check if you just completed a valid blink
-        if eyes_closed_start_time is not None:
-            print("Eyes open")
-        
-        # Reset all timers and locks so the computer is ready for the next blink
-        eyes_closed_start_time = None
-        blink_printed = False
-        closed_printed = False
+            if eye_closed:
+
+                if closed_frames <= 8:
+                    blink_count += 1
+                    eye_status = "Blink"
+
+                else:
+                    eye_status = "Long Closed"
+
+            else:
+                eye_status = "Eyes Open"
+
+            eye_closed = False
+            closed_frames = 0
+
+        cv2.putText(frame, f"Blinks: {blink_count}", (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+        cv2.putText(frame, f"Closed Frames: {closed_frames}", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+        cv2.putText(frame, eye_status, (20, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+
+
 
 
     cv2.imshow("MediaPipe Face Landmarker", frame)
