@@ -3,10 +3,10 @@ import mediapipe as mp
 import time
 import math
 
-from mediapipe.tasks import python # This imports MediaPipe's modern core setup tools.
-from mediapipe.tasks.python import vision #  This imports the specific computer vision module. Because MediaPipe can also process audio and text, you must explicitly import vision to get access to visual AI models
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
-base_options = python.BaseOptions( #  This object is a basic file finder used by all MediaPipe tools.
+base_options = python.BaseOptions(
     model_asset_path="models/face_landmarker.task"
 )
 
@@ -21,8 +21,7 @@ detector = vision.FaceLandmarker.create_from_options(options)
 camera = cv2.VideoCapture(0)
 
 if not camera.isOpened():
-    raise Exception("connot open cam")
-
+    raise Exception("cannot open cam")
 
 while True:
 
@@ -30,12 +29,10 @@ while True:
 
     if not success:
         break
-    
+
     frame = cv2.flip(frame, 1)
 
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-    # Create a MediaPipe Image
 
     mp_image = mp.Image(
         image_format=mp.ImageFormat.SRGB,
@@ -53,11 +50,15 @@ while True:
 
         face = result.face_landmarks[0]
 
+        # Select two eyelid landmarks.
+        # Landmark 159 -> Upper eyelid
+        # Landmark 145 -> Lower eyelid
         upper_eyelid = face[159]
         lower_eyelid = face[145]
 
         height, width, _ = frame.shape
 
+        # Convert normalized coordinates into pixel coordinates.
         x1 = int(upper_eyelid.x * width)
         y1 = int(upper_eyelid.y * height)
 
@@ -67,6 +68,7 @@ while True:
         cv2.circle(frame, (x1, y1), 4, (0, 255, 0), -1)
         cv2.circle(frame, (x2, y2), 4, (0, 255, 0), -1)
 
+        # Connect the eyelid landmarks for visualization.
         cv2.line(
             frame,
             (x1, y1),
@@ -75,8 +77,12 @@ while True:
             1
         )
 
+        # Measure the distance between the eyelids.
+        # Smaller distance -> Eye is closing.
+        # Larger distance -> Eye is open.
         distance = math.dist(
-            (x1,y1), (x2, y2)
+            (x1, y1),
+            (x2, y2)
         )
 
         cv2.putText(
@@ -89,11 +95,33 @@ while True:
             2
         )
 
-
-    cv2.imshow("Blink detection", frame)
+    cv2.imshow("Eye Points", frame)
 
     if cv2.waitKey(1) == ord('q'):
         break
 
 camera.release()
 cv2.destroyAllWindows()
+
+# -------------------------------------------------------------------
+# Notes
+# -------------------------------------------------------------------
+
+# This lab demonstrates the simplest approach to estimating
+# eye openness using only two eyelid landmarks.
+#
+# Pipeline:
+#
+# Face Landmarker
+#       ↓
+# Two Eyelid Landmarks
+#       ↓
+# Pixel Coordinates
+#       ↓
+# Distance Between Eyelids
+#
+# The measured distance decreases as the eye closes.
+#
+# This is only a proof of concept. The next lab introduces
+# Eye Aspect Ratio (EAR), which uses six landmarks and
+# provides a more robust blink detection algorithm.

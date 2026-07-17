@@ -1,7 +1,13 @@
-import cv2 
+import cv2
 
 camera = cv2.VideoCapture(0)
 
+# Create a YuNet face detector using a pretrained ONNX model.
+#
+# Parameters:
+# model      -> Path to the trained YuNet model.
+# config     -> Additional model configuration (unused for YuNet).
+# input_size -> Expected image size for inference.
 detector = cv2.FaceDetectorYN.create(
     model="models/face_detection_yunet_2026may.onnx",
     config="",
@@ -15,32 +21,35 @@ while True:
     if not success:
         break
 
+    # Mirror the webcam for a more natural view.
     frame = cv2.flip(frame, 1)
 
+    # Get the current frame dimensions.
     height, width = frame.shape[:2]
 
+    # Update the detector with the actual frame size.
+    # YuNet expects the detector input size to match the image being processed.
     detector.setInputSize((width, height))
 
+    # Run face detection.
+    #
+    # Returns:
+    # retval -> Number of detected faces.
+    # faces  -> NumPy array containing one row per detected face.
     retval, faces = detector.detect(frame)
 
-    # print(retval)
-    # print(faces)
-
-    # if faces is not None:
-
-    #     face = faces[0]
-
-    #     x, y, w, h = face[:4]
-
-    #     print(f"x = {x:.1f}")
-    #     print(f"y = {y:.1f}")
-    #     print(f"width = {w:.1f}")
-    #     print(f"height = {h:.1f}")
-
     if faces is not None:
+
+        # Process every detected face.
         for face in faces:
+
+            # Bounding box:
+            # x, y -> Top-left corner
+            # w, h -> Width and height
             x, y, w, h = face[:4].astype(int)
 
+            # YuNet predicts five facial landmarks:
+            # right eye, left eye, nose, right mouth, left mouth
             right_eye = tuple(face[4:6].astype(int))
             left_eye = tuple(face[6:8].astype(int))
             nose = tuple(face[8:10].astype(int))
@@ -53,16 +62,17 @@ while True:
             cv2.circle(frame, right_mouth, 3, (0, 0, 255), -1)
             cv2.circle(frame, left_mouth, 3, (0, 0, 255), -1)
 
+            # Draw the detected face bounding box.
             cv2.rectangle(
                 frame,
-                (x,y),
-                (x+w, y+h),
+                (x, y),
+                (x + w, y + h),
                 (0, 255, 0),
                 2
             )
 
-            # print(f"Confidence: {face[-1]:.3f}")
-            
+            # Detection confidence score.
+            # Higher values indicate greater confidence that a face was detected.
             score = face[-1]
 
             cv2.putText(
@@ -76,7 +86,6 @@ while True:
             )
 
     cv2.imshow("YuNet_Face_Detection", frame)
-  
 
     if cv2.waitKey(1) == ord('q'):
         break
@@ -84,23 +93,30 @@ while True:
 camera.release()
 cv2.destroyAllWindows()
 
-# Camera
-# YuNet
-# Bounding box
-# Landmarks
-# Confidence
+# -------------------------------------------------------------------
+# Notes
+# -------------------------------------------------------------------
 
-# ✅ Read frames from a camera.
-# ✅ Basic image processing.
-# ✅ Use a modern face detector.
-# ✅ Understand that detections are NumPy arrays.
-# ✅ Extract the bounding box.
-# ✅ Extract facial landmarks.
-# ✅ Use those landmarks for drawing.
-
-# Each detected face contains:
-
-# Index	    Meaning
-# 0–3	    Bounding box (x, y, w, h)
-# 4–13	    Five facial landmarks
-# 14	    Detection confidence
+# YuNet is an AI-based face detector.
+#
+# Output for each detected face includes:
+# - Bounding box (x, y, width, height)
+# - Five facial landmarks
+#   • Right eye
+#   • Left eye
+#   • Nose
+#   • Right mouth corner
+#   • Left mouth corner
+# - Detection confidence score
+#
+# Typical pipeline:
+#
+# Camera Frame
+#      ↓
+# YuNet Face Detector
+#      ↓
+# Face Bounding Box + 5 Landmarks
+#
+# These landmarks are useful for face alignment,
+# head pose estimation, and as a starting point
+# for more advanced face analysis.

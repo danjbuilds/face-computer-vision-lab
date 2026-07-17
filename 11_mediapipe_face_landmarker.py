@@ -2,27 +2,31 @@ import cv2
 import mediapipe as mp
 import time
 
-from mediapipe.tasks import python # This imports MediaPipe's modern core setup tools.
-from mediapipe.tasks.python import vision #  This imports the specific computer vision module. Because MediaPipe can also process audio and text, you must explicitly import vision to get access to visual AI models
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
-base_options = python.BaseOptions( #  This object is a basic file finder used by all MediaPipe tools.
+# Locate the MediaPipe Face Landmarker model.
+base_options = python.BaseOptions(
     model_asset_path="models/face_landmarker.task"
 )
 
+# Configure the Face Landmarker.
+#
+# running_mode -> VIDEO enables tracking between frames.
+# num_faces    -> Maximum number of faces to detect.
 options = vision.FaceLandmarkerOptions(
     base_options=base_options,
     running_mode=vision.RunningMode.VIDEO,
     num_faces=1
 )
 
+# Create the Face Landmarker.
 detector = vision.FaceLandmarker.create_from_options(options)
-
 
 camera = cv2.VideoCapture(0)
 
 if not camera.isOpened():
-    raise Exception("connot open cam")
-
+    raise Exception("cannot open cam")
 
 while True:
 
@@ -30,58 +34,34 @@ while True:
 
     if not success:
         break
-    
+
     frame = cv2.flip(frame, 1)
 
+    # MediaPipe expects RGB images.
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    # Create a MediaPipe Image
-
+    # Wrap the NumPy image as a MediaPipe Image.
     mp_image = mp.Image(
         image_format=mp.ImageFormat.SRGB,
         data=rgb
     )
 
-    # result = detector.detect(mp_image)
-    # print(result)
-
+    # VIDEO mode requires a timestamp for tracking.
     timestamp_ms = int(time.time() * 1000)
 
     result = detector.detect_for_video(
         mp_image,
         timestamp_ms
     )
-    # print(type(result))
-    # print(result)
 
     if result.face_landmarks:
-
-        # face = result.face_landmarks[0]
-        # print(len(face))
-        # landmark = face[0]
-
-        # print(landmark.x)
-        # print(landmark.y)
-        # print(landmark.z)
-    
-        # height, width, _ = frame.shape
-
-        # pixel_x = int(landmark.x * width)
-        # pixel_y = int(landmark.y * height)
-
-        # cv2.circle(
-        #     frame,
-        #     (pixel_x, pixel_y),
-        #     1,
-        #     (0, 255, 0),
-        #     -1
-        # )
-
 
         face = result.face_landmarks[0]
 
         height, width, _ = frame.shape
 
+        # Convert normalized coordinates (0.0-1.0)
+        # into pixel coordinates for drawing.
         for landmark in face:
 
             pixel_x = int(landmark.x * width)
@@ -102,3 +82,23 @@ while True:
 
 camera.release()
 cv2.destroyAllWindows()
+
+# -------------------------------------------------------------------
+# Notes
+# -------------------------------------------------------------------
+
+# MediaPipe Face Landmarker detects 478 facial landmarks.
+#
+# Pipeline:
+#
+# Camera Frame
+#      ↓
+# BGR → RGB
+#      ↓
+# MediaPipe Image
+#      ↓
+# Face Landmarker
+#      ↓
+# 478 Normalized Landmarks
+#      ↓
+# Pixel Coordinates (for drawing)
