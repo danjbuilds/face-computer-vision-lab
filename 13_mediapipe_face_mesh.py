@@ -57,6 +57,10 @@ while True:
 
         height, width, _ = frame.shape
 
+        # print(type(FACEMESH_TESSELATION))
+        # print(len(FACEMESH_TESSELATION))
+        # print(next(iter(FACEMESH_TESSELATION)))
+
         for start, end in FACEMESH_TESSELATION:
 
             point1 = face[start]
@@ -76,7 +80,6 @@ while True:
                 1
             )
 
-    
 
     cv2.imshow("MediaPipe Face Landmarker", frame)
 
